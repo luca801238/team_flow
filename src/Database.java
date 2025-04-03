@@ -1,7 +1,7 @@
 import java.sql.*;
 import java.util.Scanner;
 
-public class Main {
+public class Database {
     private static final String URL = "jdbc:mysql://localhost:3306/new_schema";
     private static final String USER = "root";
     private static final String PASSWORD = "wachtwoord123";

@@ -8,17 +8,24 @@ public class Database {
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
+        while (true) {
+            System.out.print("Voer je naam in (of type x om af te sluiten): ");
+            String sender = scanner.nextLine();
 
-        System.out.print("Voer je naam in: ");
-        String sender = scanner.nextLine();
+            // break als x wordt gezegt
+            if (sender.equalsIgnoreCase("x")) {
+                System.out.println("Afgesloten.");
+                break;
+            }
 
-        System.out.print("Voer je bericht in: ");
-        String message = scanner.nextLine();
+            System.out.print("Voer je bericht in: ");
+            String message = scanner.nextLine();
 
-        if (sendMessage(sender, message)) {
-            System.out.println("Bericht succesvol verzonden!");
-        } else {
-            System.out.println("Er is een fout opgetreden.");
+            if (sendMessage(sender, message)) {
+                System.out.println("Bericht succesvol verzonden!");
+            } else {
+                System.out.println("Er is een fout opgetreden.");
+            }
         }
 
         scanner.close();

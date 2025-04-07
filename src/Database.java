@@ -8,16 +8,23 @@ public class Database {
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
+
+
+
+        String sender = "luca";
+
+
+
+
+
+        // === Inlogfunctie komt hier ===
+        // TODO: Vraag gebruikersnaam en wachtwoord
+        // TODO: Controleer gegevens met database
+        // TODO: Als succesvol, wijs sender toe met gebruikersnaam
+
+        getMessages();
+
         while (true) {
-            System.out.print("Voer je naam in (of type x om af te sluiten): ");
-            String sender = scanner.nextLine();
-
-            // break als x wordt gezegt
-            if (sender.equalsIgnoreCase("x")) {
-                System.out.println("Afgesloten.");
-                break;
-            }
-
             System.out.print("Voer je bericht in: ");
             String message = scanner.nextLine();
 
@@ -27,8 +34,6 @@ public class Database {
                 System.out.println("Er is een fout opgetreden.");
             }
         }
-
-        scanner.close();
     }
 
     public static boolean sendMessage(String sender, String message) {
@@ -47,4 +52,22 @@ public class Database {
             return false;
         }
     }
+
+    public static void getMessages() {
+        String query = "SELECT sender, message FROM messages ORDER BY id ASC";
+
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
+
+            System.out.println("=== Vorige berichten ===");
+            while (rs.next()) {
+                System.out.println(rs.getString("sender") + ": " + rs.getString("message"));
+            }
+        } catch (SQLException e) {
+            System.out.println("Fout bij het ophalen van berichten: " + e.getMessage());
+        }
+    }
+
+
 }

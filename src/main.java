@@ -34,6 +34,12 @@ public class main {
             System.out.println("Voer de issue in: ");
             String issue = scanner.nextLine();
 
+            while (!sendIssue(issue)) {
+                System.out.println("Issue bestaat niet, voer een geldig issue in:");
+                issue = scanner.nextLine();
+            }
+            System.out.println("Bericht is gekoppeld aan issue.");
+
             if (sendMessage(sender, message)) {
                 System.out.println("Bericht succesvol verzonden!");
             } else {
@@ -41,6 +47,14 @@ public class main {
             }
         }
     }
+
+    public static boolean sendIssue(String issue) {
+        if (issue in database) {
+            return true;
+        }
+        return false;
+    }
+
 
     public static boolean sendMessage(String sender, String message) {
         String query = "INSERT INTO messages (sender, message) VALUES (?, ?)";

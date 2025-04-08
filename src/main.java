@@ -32,15 +32,15 @@ public class main {
             System.out.print("Voer je bericht in: ");
             String message = scanner.nextLine();
             System.out.print("Voer de issue in: ");
-            String issue = scanner.nextLine();
+            String issueid = scanner.nextLine();
 
-            while (!sendIssue(issue)) {
+            while (!sendIssue(issueid)) {
                 System.out.println("Issue bestaat niet, voer een geldig issue in:");
-                issue = scanner.nextLine();
+                issueid = scanner.nextLine();
             }
             System.out.println("Bericht is gekoppeld aan issue.");
 
-            if (sendMessage(sender, message)) {
+            if (sendMessage(sender, message, issueid)) {
                 System.out.println("Bericht succesvol verzonden!");
             } else {
                 System.out.println("Er is een fout opgetreden.");
@@ -48,13 +48,13 @@ public class main {
         }
     }
 
-    public static boolean sendIssue(String issue) {
+    public static boolean sendIssue(String issueid) {
         String query = "SELECT 1 FROM issues WHERE id = ?";
 
         try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
              PreparedStatement pstmt = conn.prepareStatement(query)) {
 
-            pstmt.setString(1, issue);
+            pstmt.setString(1, issueid);
             ResultSet rs = pstmt.executeQuery();
 
             if (rs.next()) {
@@ -68,14 +68,15 @@ public class main {
     }
 
 
-    public static boolean sendMessage(String sender, String message) {
-        String query = "INSERT INTO messages (sender, message) VALUES (?, ?)";
+    public static boolean sendMessage(String sender, String message, String issueid) {
+        String query = "INSERT INTO messages (sender, message, issueid) VALUES (?, ?, ?)";
 
         try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
              PreparedStatement pstmt = conn.prepareStatement(query)) {
 
             pstmt.setString(1, sender);
             pstmt.setString(2, message);
+            pstmt.setString(3, issueid);
             pstmt.executeUpdate();
 
             return true;
@@ -92,7 +93,7 @@ public class main {
 
     public static void getMessages() {
         // haalt deze dingen uit de sql
-        String query = "SELECT sender, message, timestamp FROM messages ORDER BY id ASC";
+        String query = "SELECT sender, message, timestamp, issueid FROM messages ORDER BY id ASC";
         // formatter van de datum
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("d MMMM yyyy HH:mm", new Locale("nl", "NL"));
 
@@ -113,7 +114,8 @@ public class main {
 
                 String sender = rs.getString("sender");
                 String message = rs.getString("message");
-                System.out.println("[" + formattedDate + "] " + sender + ": " + message);
+                String issueid = rs.getString("issueid");
+                System.out.println("[" + formattedDate + "] " + sender + ": " + "[" + issueid + "] " + message);
             }
             System.out.println("=========================");
             // ====

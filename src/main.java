@@ -31,6 +31,8 @@ public class main {
         while (true) {
             System.out.print("Voer je bericht in: ");
             String message = scanner.nextLine();
+            System.out.println("Voer de issue in: ");
+            String issue = scanner.nextLine();
 
             if (sendMessage(sender, message)) {
                 System.out.println("Bericht succesvol verzonden!");
@@ -56,6 +58,27 @@ public class main {
             return false;
         }
     }
+
+    public static boolean sendIssue(String sender, String message) {
+        String query = "INSERT INTO messages (sender, message) VALUES (?, ?)";
+
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
+
+            pstmt.setString(1, sender);
+            pstmt.setString(2, message);
+            pstmt.executeUpdate();
+
+            return true;
+        } catch (SQLException e) {
+            System.err.println("Fout bij het opslaan van het bericht: " + e.getMessage());
+            return false;
+        }
+    }
+
+
+
+
 
     public static void getMessages() {
         // haalt deze dingen uit de sql

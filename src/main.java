@@ -31,7 +31,7 @@ public class main {
         while (true) {
             System.out.print("Voer je bericht in: ");
             String message = scanner.nextLine();
-            System.out.println("Voer de issue in: ");
+            System.out.print("Voer de issue in: ");
             String issue = scanner.nextLine();
 
             while (!sendIssue(issue)) {
@@ -49,10 +49,22 @@ public class main {
     }
 
     public static boolean sendIssue(String issue) {
-        if (issue in database) {
-            return true;
+        String query = "SELECT 1 FROM issues WHERE id = ?";
+
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
+
+            pstmt.setString(1, issue);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                return true;  // Issue bestaat
+            } else {
+                return false;
+            }
+        } catch (SQLException e) {
+            return false;
         }
-        return false;
     }
 
 
@@ -73,22 +85,6 @@ public class main {
         }
     }
 
-    public static boolean sendIssue(String sender, String message) {
-        String query = "INSERT INTO messages (sender, message) VALUES (?, ?)";
-
-        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
-             PreparedStatement pstmt = conn.prepareStatement(query)) {
-
-            pstmt.setString(1, sender);
-            pstmt.setString(2, message);
-            pstmt.executeUpdate();
-
-            return true;
-        } catch (SQLException e) {
-            System.err.println("Fout bij het opslaan van het bericht: " + e.getMessage());
-            return false;
-        }
-    }
 
 
 

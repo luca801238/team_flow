@@ -1,7 +1,11 @@
 import java.sql.*;
 import java.util.Scanner;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 
-public class Database {
+
+public class main {
     private static final String URL = "jdbc:mysql://localhost:3306/new_schema";
     private static final String USER = "root";
     private static final String PASSWORD = "wachtwoord123";
@@ -54,16 +58,34 @@ public class Database {
     }
 
     public static void getMessages() {
-        String query = "SELECT sender, message FROM messages ORDER BY id ASC";
+        // haalt deze dingen uit de sql
+        String query = "SELECT sender, message, timestamp FROM messages ORDER BY id ASC";
+        // formatter van de datum
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("d MMMM yyyy HH:mm", new Locale("nl", "NL"));
+
 
         try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(query)) {
 
+
+            // berichten ingeladen
             System.out.println("=== Vorige berichten ===");
             while (rs.next()) {
-                System.out.println(rs.getString("sender") + ": " + rs.getString("message"));
+                // datum + formatter
+                Timestamp timestamp = rs.getTimestamp("timestamp");
+                LocalDateTime dateTime = timestamp.toLocalDateTime();
+                String formattedDate = dateTime.format(formatter);
+
+
+                String sender = rs.getString("sender");
+                String message = rs.getString("message");
+                System.out.println("[" + formattedDate + "] " + sender + ": " + message);
             }
+            System.out.println("=========================");
+            // ====
+
+
         } catch (SQLException e) {
             System.out.println("Fout bij het ophalen van berichten: " + e.getMessage());
         }

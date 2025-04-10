@@ -3,32 +3,96 @@ import java.util.Scanner;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
-import java.sql.Connection;
 
 
-public class    main {
+public class main {
     private static final String URL = "jdbc:mysql://localhost:3306/new_schema";
     private static final String USER = "root";
-    private static final String PASSWORD = "School123!";
+    private static final String PASSWORD = "wachtwoord123";
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
 
 
 
-        String sender = "luca";
+        String sender = "";
+        boolean loggedIn = false;
+
+        System.out.println("Heeft u al een account?");
+        String answer = scanner.nextLine();
+        if (answer.equalsIgnoreCase("ja")) {
+
+            while (!loggedIn) {
+                System.out.print("Voer je gebruikersnaam in: ");
+                String username = scanner.nextLine();
+                System.out.print("Voer je wachtwoord in: ");
+                String password = scanner.nextLine();
+
+                String query = "SELECT * FROM users WHERE username = ? AND password = ?";
+
+                try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+                     PreparedStatement pstmt = conn.prepareStatement(query)) {
+
+                    pstmt.setString(1, username);
+                    pstmt.setString(2, password);
+
+                    try (ResultSet rs = pstmt.executeQuery()) {
+                        if (rs.next()) {
+                            loggedIn = true;
+                            sender = username;
+                        } else {
+                            System.out.println("Onjuiste gebruikersnaam of wachtwoord.");
+                        }
+                    }
+
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        } else {
+            boolean accountGemaakt = false;
+
+            while (!accountGemaakt) {
+                System.out.print("Voer een nieuwe gebruikersnaam in: ");
+                String newUsername = scanner.nextLine();
+
+                System.out.print("Voer een wachtwoord in: ");
+                String newPassword = scanner.nextLine();
+
+                String checkQuery = "SELECT * FROM users WHERE username = ?";
+                String insertQuery = "INSERT INTO users (username, password) VALUES (?, ?)";
+
+                try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+                     PreparedStatement checkStmt = conn.prepareStatement(checkQuery)) {
+
+                    checkStmt.setString(1, newUsername);
+
+                    try (ResultSet rs = checkStmt.executeQuery()) {
+                        if (rs.next()) {
+                            System.out.println("Gebruikersnaam bestaat al. Kies een andere.");
+                        } else {
+                            try (PreparedStatement insertStmt = conn.prepareStatement(insertQuery)) {
+                                insertStmt.setString(1, newUsername);
+                                insertStmt.setString(2, newPassword);
+                                insertStmt.executeUpdate();
+
+                                System.out.println("Account succesvol aangemaakt! Je bent nu ingelogd.");
+                                loggedIn = true;
+                                accountGemaakt = true;
+                                sender = newUsername;
+                            }
+                        }
+                    }
+
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
 
 
 
-
-
-        // === Inlogfunctie komt hier ===
-        // TODO: Vraag gebruikersnaam en wachtwoord
-        // TODO: Controleer gegevens met database
-        // TODO: Als succesvol, wijs sender toe met gebruikersnaam
-
-            getMessages();
-
+        getMessages();
 
         while (true) {
             System.out.print("Voer je bericht in: ");
@@ -48,10 +112,6 @@ public class    main {
                 System.out.println("Er is een fout opgetreden.");
             }
         }
-    }
-
-    public static Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(URL, USER, PASSWORD);
     }
 
     public static boolean sendIssue(String issueid) {
@@ -92,9 +152,25 @@ public class    main {
         }
     }
 
+    public static String getRole(String username) {
+        String query = "SELECT role FROM users WHERE username = ?";
 
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement statement = conn.prepareStatement(query)) {
+            statement.setString(1, username);
 
+            ResultSet resultSet = statement.executeQuery();
 
+            if (resultSet.next()) {
+                return resultSet.getString("role"); // Retourneer de rol van de gebruiker
+            } else {
+                return null;
+            }
+        } catch (SQLException exception) {
+            System.out.println("Error bij getRole functie: " + exception.getMessage());
+            return null;
+        }
+    }
 
 
     public static void getMessages() {

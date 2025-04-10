@@ -3,12 +3,13 @@ import java.util.Scanner;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
+import java.sql.Connection;
 
 
-public class main {
+public class    main {
     private static final String URL = "jdbc:mysql://localhost:3306/new_schema";
     private static final String USER = "root";
-    private static final String PASSWORD = "wachtwoord123";
+    private static final String PASSWORD = "School123!";
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
@@ -26,7 +27,8 @@ public class main {
         // TODO: Controleer gegevens met database
         // TODO: Als succesvol, wijs sender toe met gebruikersnaam
 
-        getMessages();
+            getMessages();
+
 
         while (true) {
             System.out.print("Voer je bericht in: ");
@@ -46,6 +48,10 @@ public class main {
                 System.out.println("Er is een fout opgetreden.");
             }
         }
+    }
+
+    public static Connection getConnection() throws SQLException {
+        return DriverManager.getConnection(URL, USER, PASSWORD);
     }
 
     public static boolean sendIssue(String issueid) {

@@ -8,11 +8,10 @@ import java.util.Locale;
 public class main {
     private static final String URL = "jdbc:mysql://localhost:3306/new_schema";
     private static final String USER = "root";
-    private static final String PASSWORD = "School123!";
+    private static final String PASSWORD = "wachtwoord123";
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-
 
 
         String sender = "";
@@ -62,7 +61,7 @@ public class main {
                     String newPassword = scanner.nextLine();
 
                     String checkQuery = "SELECT * FROM users WHERE username = ?";
-                    String insertQuery = "INSERT INTO users (username, password) VALUES (?, ?)";
+                    String insertQuery = "INSERT INTO users (username, password, role) VALUES (?, ?, ?)";
 
                     try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
                          PreparedStatement checkStmt = conn.prepareStatement(checkQuery)) {
@@ -76,6 +75,7 @@ public class main {
                                 try (PreparedStatement insertStmt = conn.prepareStatement(insertQuery)) {
                                     insertStmt.setString(1, newUsername);
                                     insertStmt.setString(2, newPassword);
+                                    insertStmt.setString(3, "developer");
                                     insertStmt.executeUpdate();
 
                                     System.out.println("Account succesvol aangemaakt! Je bent nu ingelogd.");
@@ -90,18 +90,47 @@ public class main {
                         e.printStackTrace();
                     }
                 }
-            }
-            else {
+            } else {
                 System.out.println("Ongeldig zeg ja of nee.");
             }
         }
 
 
-
-
         getMessages();
 
         while (true) {
+            String role = getRole(sender);
+            if (role.equals("scrummaster") || role.equals("product_owner")) {
+                while (true) {
+                    System.out.print("Wil je een nieuwe issue aanmaken? (ja/nee): ");
+                    String issueofNiet = scanner.nextLine();
+                    if (issueofNiet.equals("nee")) {
+                        System.out.println("");
+                        break;
+                    } else if (issueofNiet.equals("ja")) {
+                        System.out.print("Welke issue wil je nu aanmaken?");
+                        String issue = scanner.nextLine();
+                        if (sendIssue(issue)) {
+                            System.out.println("issue bestaat al");
+
+                        } else if (!issueFormat(issue)) {
+                            System.out.println("fout bij format van issue");
+
+                        } else {
+                            if (issueNaarDB(issue)) {
+                                System.out.println("issue is opgeslagen");
+
+                            } else {
+                                System.out.println("error");
+                            }
+                        }
+                    } else {
+                        System.out.println("Ongeldige invoer");
+                    }
+                }
+            }
+
+
             System.out.print("Voer je bericht in: ");
             String message = scanner.nextLine();
             System.out.print("Voer de issue in: ");
@@ -121,6 +150,8 @@ public class main {
         }
     }
 
+
+
     public static boolean sendIssue(String issueid) {
         String query = "SELECT 1 FROM issues WHERE id = ?";
 
@@ -138,6 +169,24 @@ public class main {
         } catch (SQLException e) {
             return false;
         }
+    }
+
+    public static boolean issueNaarDB(String issue) {
+        String query = "INSERT INTO issues (id) VALUES (?)";
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
+
+            pstmt.setString(1, issue);
+            pstmt.executeUpdate();
+            return true;
+        } catch (SQLException e) {
+            System.out.println("Fout bij het opslaan van de issue: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public static boolean issueFormat(String issue) {
+        return issue.matches("^\\d+(\\.\\d{1,3}){0,2}$");  // lastig
     }
 
 

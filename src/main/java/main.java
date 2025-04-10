@@ -8,7 +8,7 @@ import java.util.Locale;
 public class main {
     private static final String URL = "jdbc:mysql://localhost:3306/new_schema";
     private static final String USER = "root";
-    private static final String PASSWORD = "wachtwoord123";
+    private static final String PASSWORD = "School123!";
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
@@ -17,78 +17,85 @@ public class main {
 
         String sender = "";
         boolean loggedIn = false;
+        String answer = "";
 
-        System.out.println("Heeft u al een account?");
-        String answer = scanner.nextLine();
-        if (answer.equalsIgnoreCase("ja")) {
+        while (!(answer.equalsIgnoreCase("ja") || answer.equalsIgnoreCase("nee"))) {
+            System.out.println("Heeft u al een account?");
+            answer = scanner.nextLine();
+            if (answer.equalsIgnoreCase("ja")) {
 
-            while (!loggedIn) {
-                System.out.print("Voer je gebruikersnaam in: ");
-                String username = scanner.nextLine();
-                System.out.print("Voer je wachtwoord in: ");
-                String password = scanner.nextLine();
+                while (!loggedIn) {
+                    System.out.print("Voer je gebruikersnaam in: ");
+                    String username = scanner.nextLine();
+                    System.out.print("Voer je wachtwoord in: ");
+                    String password = scanner.nextLine();
 
-                String query = "SELECT * FROM users WHERE username = ? AND password = ?";
+                    String query = "SELECT * FROM users WHERE username = ? AND password = ?";
 
-                try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
-                     PreparedStatement pstmt = conn.prepareStatement(query)) {
+                    try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+                         PreparedStatement pstmt = conn.prepareStatement(query)) {
 
-                    pstmt.setString(1, username);
-                    pstmt.setString(2, password);
+                        pstmt.setString(1, username);
+                        pstmt.setString(2, password);
 
-                    try (ResultSet rs = pstmt.executeQuery()) {
-                        if (rs.next()) {
-                            loggedIn = true;
-                            sender = username;
-                        } else {
-                            System.out.println("Onjuiste gebruikersnaam of wachtwoord.");
-                        }
-                    }
-
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
-        } else {
-            boolean accountGemaakt = false;
-
-            while (!accountGemaakt) {
-                System.out.print("Voer een nieuwe gebruikersnaam in: ");
-                String newUsername = scanner.nextLine();
-
-                System.out.print("Voer een wachtwoord in: ");
-                String newPassword = scanner.nextLine();
-
-                String checkQuery = "SELECT * FROM users WHERE username = ?";
-                String insertQuery = "INSERT INTO users (username, password) VALUES (?, ?)";
-
-                try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
-                     PreparedStatement checkStmt = conn.prepareStatement(checkQuery)) {
-
-                    checkStmt.setString(1, newUsername);
-
-                    try (ResultSet rs = checkStmt.executeQuery()) {
-                        if (rs.next()) {
-                            System.out.println("Gebruikersnaam bestaat al. Kies een andere.");
-                        } else {
-                            try (PreparedStatement insertStmt = conn.prepareStatement(insertQuery)) {
-                                insertStmt.setString(1, newUsername);
-                                insertStmt.setString(2, newPassword);
-                                insertStmt.executeUpdate();
-
-                                System.out.println("Account succesvol aangemaakt! Je bent nu ingelogd.");
+                        try (ResultSet rs = pstmt.executeQuery()) {
+                            if (rs.next()) {
                                 loggedIn = true;
-                                accountGemaakt = true;
-                                sender = newUsername;
+                                sender = username;
+                            } else {
+                                System.out.println("Onjuiste gebruikersnaam of wachtwoord.");
                             }
                         }
-                    }
 
-                } catch (SQLException e) {
-                    e.printStackTrace();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                }
+            } else if (answer.equalsIgnoreCase("nee")) {
+                boolean accountGemaakt = false;
+
+                while (!accountGemaakt) {
+                    System.out.print("Voer een nieuwe gebruikersnaam in: ");
+                    String newUsername = scanner.nextLine();
+
+                    System.out.print("Voer een wachtwoord in: ");
+                    String newPassword = scanner.nextLine();
+
+                    String checkQuery = "SELECT * FROM users WHERE username = ?";
+                    String insertQuery = "INSERT INTO users (username, password) VALUES (?, ?)";
+
+                    try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+                         PreparedStatement checkStmt = conn.prepareStatement(checkQuery)) {
+
+                        checkStmt.setString(1, newUsername);
+
+                        try (ResultSet rs = checkStmt.executeQuery()) {
+                            if (rs.next()) {
+                                System.out.println("Gebruikersnaam bestaat al. Kies een andere.");
+                            } else {
+                                try (PreparedStatement insertStmt = conn.prepareStatement(insertQuery)) {
+                                    insertStmt.setString(1, newUsername);
+                                    insertStmt.setString(2, newPassword);
+                                    insertStmt.executeUpdate();
+
+                                    System.out.println("Account succesvol aangemaakt! Je bent nu ingelogd.");
+                                    loggedIn = true;
+                                    accountGemaakt = true;
+                                    sender = newUsername;
+                                }
+                            }
+                        }
+
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
+            else {
+                System.out.println("Ongeldig zeg ja of nee.");
+            }
         }
+
 
 
 

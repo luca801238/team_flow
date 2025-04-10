@@ -13,18 +13,37 @@ public class main {
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
 
+        boolean loggedIn = false;
 
+        String sender = "";
 
-        String sender = "luca";
+        while (!loggedIn) {
+            System.out.print("Voer je gebruikersnaam in:");
+            String username = scanner.nextLine();
+            System.out.print("Voer je wachtwoord in:");
+            String password = scanner.nextLine();
 
+            String query = "SELECT * FROM users WHERE username = ? AND password = ?";
 
+            try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+                 PreparedStatement pstmt = conn.prepareStatement(query)) {
 
+                pstmt.setString(1, username);
+                pstmt.setString(2, password);
 
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    if (rs.next()) {
+                        loggedIn = true;
+                        sender = username;
+                    } else {
+                        System.out.println("Invalid username or password.");
+                    }
+                }
 
-        // === Inlogfunctie komt hier ===
-        // TODO: Vraag gebruikersnaam en wachtwoord
-        // TODO: Controleer gegevens met database
-        // TODO: Als succesvol, wijs sender toe met gebruikersnaam
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
 
         getMessages();
 
@@ -85,11 +104,6 @@ public class main {
             return false;
         }
     }
-
-
-
-
-
 
     public static void getMessages() {
         // haalt deze dingen uit de sql

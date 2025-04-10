@@ -105,6 +105,27 @@ public class main {
         }
     }
 
+    public static String getRole(String username) {
+        String query = "SELECT role FROM users WHERE username = ?";
+
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement statement = conn.prepareStatement(query)) {
+            statement.setString(1, username);
+
+            ResultSet resultSet = statement.executeQuery();
+
+            if (resultSet.next()) {
+                return resultSet.getString("role"); // Retourneer de rol van de gebruiker
+            } else {
+                return null;
+            }
+        } catch (SQLException exception) {
+            System.out.println("Error bij getRole functie: " + exception.getMessage());
+            return null;
+        }
+    }
+
+
     public static void getMessages() {
         // haalt deze dingen uit de sql
         String query = "SELECT sender, message, timestamp, issueid FROM messages ORDER BY id ASC";

@@ -8,7 +8,7 @@ import java.util.Locale;
 public class main {
     private static final String URL = "jdbc:mysql://localhost:3306/new_schema";
     private static final String USER = "root";
-    private static final String PASSWORD = "wachtwoord123";
+    private static final String PASSWORD = "mysql123";
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
@@ -95,11 +95,39 @@ public class main {
             }
         }
 
+        String role = getRole(sender);
+
+        if ("administrator".equalsIgnoreCase(role)) {
+            System.out.println("Welkom administrator!");
+
+            System.out.print("Gebruikersnaam van de persoon wiens rol je wil aanpassen: ");
+            String targetUser = scanner.nextLine();
+
+            String currentRole = getRole(targetUser);
+
+            if (currentRole == null) {
+                System.out.println("Gebruiker bestaat niet.");
+            } else {
+                System.out.println(targetUser + " [" + currentRole + "]");
+
+                System.out.print("Nieuwe rol (scrummaster, product_owner, developer, administrator): ");
+                String newRole = scanner.nextLine();
+
+                if (!isValidRole(newRole)) {
+                    System.out.println("Ongeldige rol. Probeer opnieuw.");
+                } else {
+                    if (updateRole(targetUser, newRole)) {
+                        System.out.println("Rol succesvol aangepast.");
+                    } else {
+                        System.out.println("Er is iets fout gegaan bij het aanpassen van de rol.");
+                    }
+                }
+            }
+        }
 
         getMessages(null);
 
         while (true) {
-            String role = getRole(sender);
             if (role.equals("scrummaster") || role.equals("product_owner")) {
                 while (true) {
                     System.out.print("Wil je een nieuwe issue aanmaken? (ja/nee): ");
@@ -287,5 +315,27 @@ public class main {
         }
     }
 
+    public static boolean isValidRole(String role) {
+        String[] validRoles = {"scrummaster", "product_owner", "developer", "administrator"};
+        for (String r : validRoles) {
+            if (r.equalsIgnoreCase(role)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
+    public static boolean updateRole(String username, String newRole) {
+        String query = "UPDATE users SET role = ? WHERE username = ?";
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
+            pstmt.setString(1, newRole);
+            pstmt.setString(2, username);
+            int updated = pstmt.executeUpdate();
+            return updated > 0;
+        } catch (SQLException e) {
+            System.out.println("Fout bij het updaten van de rol: " + e.getMessage());
+            return false;
+        }
+    }
 }

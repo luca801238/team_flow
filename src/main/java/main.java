@@ -96,7 +96,7 @@ public class main {
         }
 
 
-        getMessages();
+        getMessages(null);
 
         while (true) {
             String role = getRole(sender);
@@ -129,6 +129,24 @@ public class main {
                     }
                 }
             }
+
+            System.out.print("Wil je berichten ophalen van een bepaalde issue? (ja/nee): ");
+            String issueAntwoord = scanner.nextLine();
+            if (issueAntwoord.equalsIgnoreCase("Ja")){
+                System.out.print("Van welke issue?: ");
+                String nieuwIssueAntwoord = scanner.nextLine();
+                if (issueFormat(nieuwIssueAntwoord)){
+                    getMessages(nieuwIssueAntwoord);
+                } else {
+                    System.out.print("Geef een heel getal op: ");
+                }
+
+            } else if(issueAntwoord.equalsIgnoreCase("Nee")) {
+                System.out.print("");
+            } else {
+                System.out.print("Onjuiste invoer.");
+            }
+
 
 
             System.out.print("Voer je bericht in: ");
@@ -186,7 +204,7 @@ public class main {
     }
 
     public static boolean issueFormat(String issue) {
-        return issue.matches("^\\d+(\\.\\d{1,3}){0,2}$");  // lastig
+        return issue.matches("^\\d+(\\.\\d+){0,2}$"); // 2 punten max dus 1.1.1 of 1.1 of 1
     }
 
 
@@ -229,9 +247,14 @@ public class main {
     }
 
 
-    public static void getMessages() {
+    public static void getMessages(String issueFilter) {
         // haalt deze dingen uit de sql
-        String query = "SELECT sender, message, timestamp, issueid FROM messages ORDER BY id ASC";
+        String query;
+        if (issueFilter == null) {
+            query = "SELECT sender, message, timestamp, issueid FROM messages ORDER BY id ASC";
+        } else {
+            query = "SELECT sender, message, timestamp, issueid FROM messages WHERE issueid = '" + issueFilter + "' ORDER BY id ASC";
+        }
         // formatter van de datum
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("d MMMM yyyy HH:mm", new Locale("nl", "NL"));
 

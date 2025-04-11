@@ -4,32 +4,30 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
-
 public class main {
     private static final String URL = "jdbc:mysql://localhost:3306/new_schema";
     private static final String USER = "root";
-    private static final String PASSWORD = "wachtwoord123";
+    private static final String PASSWORD = "School123!";
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-
-
         String sender = "";
         boolean loggedIn = false;
         String answer = "";
 
+        // Vraag de gebruiker of hij/zij al een account heeft.
         while (!(answer.equalsIgnoreCase("ja") || answer.equalsIgnoreCase("nee"))) {
-            System.out.println("Heeft u al een account?");
+            System.out.println("Heeft u al een account? (ja/nee)");
             answer = scanner.nextLine();
             if (answer.equalsIgnoreCase("ja")) {
-
+                // Inloggen
                 while (!loggedIn) {
                     System.out.print("Voer je gebruikersnaam in: ");
                     String username = scanner.nextLine();
                     System.out.print("Voer je wachtwoord in: ");
                     String password = scanner.nextLine();
 
-                    String query = "SELECT * FROM users WHERE username = ? AND password = ?";
+                    String query = "SELECT * FROM user WHERE username = ? AND password = ?";
 
                     try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
                          PreparedStatement pstmt = conn.prepareStatement(query)) {
@@ -45,29 +43,28 @@ public class main {
                                 System.out.println("Onjuiste gebruikersnaam of wachtwoord.");
                             }
                         }
-
                     } catch (SQLException e) {
                         e.printStackTrace();
                     }
                 }
             } else if (answer.equalsIgnoreCase("nee")) {
+                // Account aanmaken
                 boolean accountGemaakt = false;
-
                 while (!accountGemaakt) {
                     System.out.print("Voer een nieuwe gebruikersnaam in: ");
                     String newUsername = scanner.nextLine();
-
                     System.out.print("Voer een wachtwoord in: ");
                     String newPassword = scanner.nextLine();
 
-                    String checkQuery = "SELECT * FROM users WHERE username = ?";
-                    String insertQuery = "INSERT INTO users (username, password, role) VALUES (?, ?, ?)";
+                    // Voor dit voorbeeld gebruiken we een standaard scrumboardId (bijv. 1) voor nieuwe gebruikers.
+                    int defaultScrumboardId = 1;
+                    String checkQuery = "SELECT * FROM user WHERE username = ?";
+                    String insertQuery = "INSERT INTO user (username, password, rol, scrumboardId) VALUES (?, ?, ?, ?)";
 
                     try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
                          PreparedStatement checkStmt = conn.prepareStatement(checkQuery)) {
 
                         checkStmt.setString(1, newUsername);
-
                         try (ResultSet rs = checkStmt.executeQuery()) {
                             if (rs.next()) {
                                 System.out.println("Gebruikersnaam bestaat al. Kies een andere.");
@@ -76,6 +73,7 @@ public class main {
                                     insertStmt.setString(1, newUsername);
                                     insertStmt.setString(2, newPassword);
                                     insertStmt.setString(3, "developer");
+                                    insertStmt.setInt(4, defaultScrumboardId);
                                     insertStmt.executeUpdate();
 
                                     System.out.println("Account succesvol aangemaakt! Je bent nu ingelogd.");
@@ -85,51 +83,49 @@ public class main {
                                 }
                             }
                         }
-
                     } catch (SQLException e) {
                         e.printStackTrace();
                     }
                 }
             } else {
-                System.out.println("Ongeldig zeg ja of nee.");
+                System.out.println("Ongeldig, zeg ja of nee.");
             }
         }
 
+        // Haal het scrumboardId op van de ingelogde gebruiker.
+        int userScrumboardId = getScrumboardId(sender);
+        // Toon bestaande berichten van het scrumboard van de gebruiker.
+        getMessages(sender, userScrumboardId);
 
-        getMessages();
-
+        // Hoofdloop: issues en berichten
         while (true) {
             String role = getRole(sender);
-            if (role.equals("scrummaster") || role.equals("product_owner")) {
+            if (role != null && (role.equalsIgnoreCase("scrummaster") || role.equalsIgnoreCase("product_owner"))) {
                 while (true) {
                     System.out.print("Wil je een nieuwe issue aanmaken? (ja/nee): ");
                     String issueofNiet = scanner.nextLine();
-                    if (issueofNiet.equals("nee")) {
+                    if (issueofNiet.equalsIgnoreCase("nee")) {
                         System.out.println("");
                         break;
-                    } else if (issueofNiet.equals("ja")) {
-                        System.out.print("Welke issue wil je nu aanmaken?");
+                    } else if (issueofNiet.equalsIgnoreCase("ja")) {
+                        System.out.print("Welke issue wil je nu aanmaken? ");
                         String issue = scanner.nextLine();
                         if (sendIssue(issue)) {
-                            System.out.println("issue bestaat al");
-
+                            System.out.println("Issue bestaat al.");
                         } else if (!issueFormat(issue)) {
-                            System.out.println("fout bij format van issue");
-
+                            System.out.println("Fout bij format van issue.");
                         } else {
-                            if (issueNaarDB(issue)) {
-                                System.out.println("issue is opgeslagen");
-
+                            if (issueNaarDB(issue, userScrumboardId)) {
+                                System.out.println("Issue is opgeslagen.");
                             } else {
-                                System.out.println("error");
+                                System.out.println("Error bij opslaan van de issue.");
                             }
                         }
                     } else {
-                        System.out.println("Ongeldige invoer");
+                        System.out.println("Ongeldige invoer.");
                     }
                 }
             }
-
 
             System.out.print("Voer je bericht in: ");
             String message = scanner.nextLine();
@@ -142,7 +138,7 @@ public class main {
             }
             System.out.println("Bericht is gekoppeld aan issue.");
 
-            if (sendMessage(sender, message, issueid)) {
+            if (sendMessage(sender, message, issueid, userScrumboardId)) {
                 System.out.println("Bericht succesvol verzonden!");
             } else {
                 System.out.println("Er is een fout opgetreden.");
@@ -150,33 +146,27 @@ public class main {
         }
     }
 
-
-
+    // Controleer of een issue (berichtId) al bestaat
     public static boolean sendIssue(String issueid) {
-        String query = "SELECT 1 FROM issues WHERE id = ?";
-
+        String query = "SELECT 1 FROM bericht WHERE berichtId = ?";
         try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
              PreparedStatement pstmt = conn.prepareStatement(query)) {
-
             pstmt.setString(1, issueid);
-            ResultSet rs = pstmt.executeQuery();
-
-            if (rs.next()) {
-                return true;  // Issue bestaat
-            } else {
-                return false;
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return rs.next();  // Issue bestaat als er een resultaat is.
             }
         } catch (SQLException e) {
             return false;
         }
     }
 
-    public static boolean issueNaarDB(String issue) {
-        String query = "INSERT INTO issues (id) VALUES (?)";
+    // Sla een nieuwe issue op in de database, met koppeling naar het scrumboard
+    public static boolean issueNaarDB(String issue, int scrumboardId) {
+        String query = "INSERT INTO bericht (berichtId, scrumboardId) VALUES (?, ?)";
         try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
              PreparedStatement pstmt = conn.prepareStatement(query)) {
-
             pstmt.setString(1, issue);
+            pstmt.setInt(2, scrumboardId);
             pstmt.executeUpdate();
             return true;
         } catch (SQLException e) {
@@ -185,22 +175,21 @@ public class main {
         }
     }
 
+    // Controleer of het issue-formaat klopt (bijv. "1" of "1.1" of "1.1.1")
     public static boolean issueFormat(String issue) {
-        return issue.matches("^\\d+(\\.\\d{1,3}){0,2}$");  // lastig
+        return issue.matches("^\\d+(\\.\\d{1,3}){0,2}$");
     }
 
-
-    public static boolean sendMessage(String sender, String message, String issueid) {
-        String query = "INSERT INTO messages (sender, message, issueid) VALUES (?, ?, ?)";
-
+    // Sla een bericht op in de database, samen met de scrumboardId
+    public static boolean sendMessage(String sender, String message, String issueid, int scrumboardId) {
+        String query = "INSERT INTO bericht (sender, bericht, berichtId, scrumboardId) VALUES (?, ?, ?, ?)";
         try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
              PreparedStatement pstmt = conn.prepareStatement(query)) {
-
             pstmt.setString(1, sender);
             pstmt.setString(2, message);
             pstmt.setString(3, issueid);
+            pstmt.setInt(4, scrumboardId);
             pstmt.executeUpdate();
-
             return true;
         } catch (SQLException e) {
             System.err.println("Fout bij het opslaan van het bericht: " + e.getMessage());
@@ -208,19 +197,18 @@ public class main {
         }
     }
 
+    // Haal de rol van een gebruiker op
     public static String getRole(String username) {
-        String query = "SELECT role FROM users WHERE username = ?";
-
+        String query = "SELECT rol FROM user WHERE username = ?";
         try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
-             PreparedStatement statement = conn.prepareStatement(query)) {
-            statement.setString(1, username);
-
-            ResultSet resultSet = statement.executeQuery();
-
-            if (resultSet.next()) {
-                return resultSet.getString("role"); // Retourneer de rol van de gebruiker
-            } else {
-                return null;
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setString(1, username);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("rol");
+                } else {
+                    return null;
+                }
             }
         } catch (SQLException exception) {
             System.out.println("Error bij getRole functie: " + exception.getMessage());
@@ -228,41 +216,48 @@ public class main {
         }
     }
 
-
-    public static void getMessages() {
-        // haalt deze dingen uit de sql
-        String query = "SELECT sender, message, timestamp, issueid FROM messages ORDER BY id ASC";
-        // formatter van de datum
+    // Haal de berichten op van het scrumboard waaraan de gebruiker is gekoppeld
+    public static void getMessages(String sender, int scrumboardId) {
+        String query = "SELECT sender, bericht, timestamp, berichtId FROM bericht WHERE scrumboardId = ? ORDER BY berichtId ASC";
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("d MMMM yyyy HH:mm", new Locale("nl", "NL"));
-
-
         try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(query)) {
-
-
-            // berichten ingeladen
-            System.out.println("=== Vorige berichten ===");
-            while (rs.next()) {
-                // datum + formatter
-                Timestamp timestamp = rs.getTimestamp("timestamp");
-                LocalDateTime dateTime = timestamp.toLocalDateTime();
-                String formattedDate = dateTime.format(formatter);
-
-
-                String sender = rs.getString("sender");
-                String message = rs.getString("message");
-                String issueid = rs.getString("issueid");
-                System.out.println("[" + formattedDate + "] " + sender + ": " + "[" + issueid + "] " + message);
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
+            pstmt.setInt(1, scrumboardId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                System.out.println("=== Vorige berichten ===");
+                while (rs.next()) {
+                    Timestamp timestamp = rs.getTimestamp("timestamp");
+                    LocalDateTime dateTime = timestamp.toLocalDateTime();
+                    String formattedDate = dateTime.format(formatter);
+                    String messageSender = rs.getString("sender");
+                    String message = rs.getString("bericht");
+                    String issueId = rs.getString("berichtId");
+                    System.out.println("[" + formattedDate + "] " + messageSender + ": " + "[" + issueId + "] " + message);
+                }
+                System.out.println("=========================");
             }
-            System.out.println("=========================");
-            // ====
-
-
         } catch (SQLException e) {
             System.out.println("Fout bij het ophalen van berichten: " + e.getMessage());
         }
     }
 
-
+    // Haal het scrumboardId op van een gebruiker.
+    public static int getScrumboardId(String username) {
+        String query = "SELECT scrumboardId FROM user WHERE username = ?";
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
+            pstmt.setString(1, username);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("scrumboardId");
+                } else {
+                    System.out.println("Gebruiker heeft geen scrumboardId.");
+                    return -1;
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println("Error bij ophalen scrumboardId: " + e.getMessage());
+            return -1;
+        }
+    }
 }

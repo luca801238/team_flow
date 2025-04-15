@@ -5,23 +5,25 @@ public class Main {
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
 
-        // Authentication process
         Authentication authentication = new Authentication();
-        String sender = authentication.authenticate();  // Assume it returns the sender's username
-        String role = Users.getRole(sender);  // Get the role of the user
+        String sender = authentication.authenticate();
+        String role = Users.getRole(sender);
 
-        // Role-based menu navigation
+        if (!role.equals("administrator")) {
+            Messages.displayMessagesBySprint();
+        }
+
         switch (role) {
             case "administrator":
-                AdministratorMenu.start(scanner, sender);  // Admin menu functionality
+                AdministratorMenu.start(scanner, sender);
                 break;
             case "developer":
             case "product_owner":
-            case "scrummaster":
-                UserMenu.start(scanner, sender, role);  // User menu functionality
+            case "scrum_master":
+                UserMenu.start(scanner, sender, role);
                 break;
             default:
-                System.out.println("Onbekende rol.");
+                System.out.println("Je hebt geen rol.");
         }
     }
 }

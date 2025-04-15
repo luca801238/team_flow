@@ -10,7 +10,7 @@ public class Authentication {
         String answer = "";
 
         while (!(answer.equalsIgnoreCase("ja") || answer.equalsIgnoreCase("nee"))) {
-            System.out.println("Heeft u al een account?");
+            System.out.println("Heeft u al een account? (ja/nee)");
             answer = scanner.nextLine();
 
             if (answer.equalsIgnoreCase("ja")) {
@@ -82,7 +82,7 @@ public class Authentication {
                     }
                 }
             } else {
-                System.out.println("Ongeldig zeg ja of nee.");
+                System.out.println("Voer een geldig antwoord in.");
             }
         }
 

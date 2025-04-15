@@ -1,7 +1,4 @@
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.Scanner;
 
 public class Issues {
@@ -58,6 +55,24 @@ public class Issues {
         } catch (SQLException e) {
             System.out.println("Fout bij opslaan van issue: " + e.getMessage());
             return false;
+        }
+    }
+
+    public static void listAllIssues() {
+        String query = "SELECT id FROM issues ORDER BY id ASC";
+
+        try (Connection conn = Database.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query);
+             ResultSet rs = stmt.executeQuery()) {
+
+            System.out.println("\n=== Alle issues ===");
+            while (rs.next()) {
+                String id = rs.getString("id");
+                System.out.println(id);
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Fout bij ophalen van issues: " + e.getMessage());
         }
     }
 }

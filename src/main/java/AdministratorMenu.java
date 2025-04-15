@@ -7,10 +7,10 @@ public class AdministratorMenu {
     public static void start(Scanner scanner, String adminUsername) {
         while (true) {
             System.out.println("\nWelkom " + adminUsername + " (Administrator)");
-            System.out.println("1. Bekijk alle gebruikers");
-            System.out.println("2. Wijzig gebruikersrol");
-            System.out.println("3. Verwijder gebruiker");
-            System.out.println("0. Uitloggen");
+            System.out.println("[1] Bekijk alle gebruikers");
+            System.out.println("[2] Wijzig gebruikersrol");
+            System.out.println("[3] Verwijder gebruiker");
+            System.out.println("[0] Uitloggen");
 
             String choice = scanner.nextLine();
 

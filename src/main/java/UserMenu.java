@@ -5,11 +5,16 @@ public class UserMenu {
     public static void start(Scanner scanner, String sender, String role) {
         while (true) {
             System.out.println("\n[1] Bericht versturen");
-            System.out.println("[2] Berichten ophalen");
+            System.out.println("[2] Berichten tonen");
+            System.out.println("[3] Alle issues tonen");
+            System.out.println("[4] Alle sprints tonen");
 
-            // Only show the option for creating a new issue if the role is scrummaster or product_owner
-            if (role.equals("scrummaster") || role.equals("product_owner")) {
-                System.out.println("[3] Nieuwe issue aanmaken");
+            if (role.equals("scrum_master") || role.equals("product_owner")) {
+                System.out.println("[5] Nieuwe issue aanmaken");
+            }
+
+            if (role.equals("scrum_master")) {
+                System.out.println("[6] Nieuwe sprint aanmaken");
             }
 
             System.out.println("[0] Uitloggen");
@@ -18,27 +23,35 @@ public class UserMenu {
 
             switch (keuze) {
                 case "1":
-                    // Sending a message
                     Messages.sendMessage(scanner, sender);
                     break;
                 case "2":
-                    // Reading messages
                     Messages.readMessages(scanner);
                     break;
                 case "3":
-                    if (role.equals("scrummaster") || role.equals("product_owner")) {
-                        // Creating a new issue
+                    Issues.listAllIssues();
+                    break;
+                case "4":
+                    Sprints.listAllSprints();
+                    break;
+                case "5":
+                    if (role.equals("scrum_master") || role.equals("product_owner")) {
                         Issues.createIssue(scanner);
                     } else {
                         System.out.println("Je hebt geen rechten om issues aan te maken.");
                     }
                     break;
+                case "6":
+                    if (role.equals("scrum_master")) {
+                        Sprints.createSprint(scanner);
+                    } else {
+                        System.out.println("Je hebt geen rechten om sprints aan te maken.");
+                    }
+                    break;
                 case "0":
-                    // Log out and return
                     System.out.println("Uitloggen...");
                     return;
                 default:
-                    // Handle invalid input
                     System.out.println("Ongeldige keuze, probeer het opnieuw.");
             }
         }

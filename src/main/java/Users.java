@@ -1,6 +1,4 @@
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
+import java.sql.*;
 import java.sql.SQLException;
 
 public class Users {
@@ -8,14 +6,14 @@ public class Users {
     public static String getRole(String username) {
         String query = "SELECT role FROM users WHERE username = ?";
 
-        try (Connection conn = Database.getConnection();  // Reuse central connection
+        try (Connection conn = Database.getConnection();
              PreparedStatement statement = conn.prepareStatement(query)) {
 
             statement.setString(1, username);
             ResultSet resultSet = statement.executeQuery();
 
             if (resultSet.next()) {
-                return resultSet.getString("role");  // Return user role
+                return resultSet.getString("role");
             } else {
                 return null;
             }

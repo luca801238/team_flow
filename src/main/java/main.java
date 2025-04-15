@@ -95,106 +95,151 @@ public class main {
             }
         }
 
-        String role = getRole(sender);
-
-        if ("administrator".equalsIgnoreCase(role)) {
-            System.out.println("Welkom administrator!");
-
-            System.out.print("Gebruikersnaam van de persoon wiens rol je wil aanpassen: ");
-            String targetUser = scanner.nextLine();
-
-            String currentRole = getRole(targetUser);
-
-            if (currentRole == null) {
-                System.out.println("Gebruiker bestaat niet.");
-            } else {
-                System.out.println(targetUser + " [" + currentRole + "]");
-
-                System.out.print("Nieuwe rol (scrummaster, product_owner, developer, administrator): ");
-                String newRole = scanner.nextLine();
-
-                if (!isValidRole(newRole)) {
-                    System.out.println("Ongeldige rol. Probeer opnieuw.");
-                } else {
-                    if (updateRole(targetUser, newRole)) {
-                        System.out.println("Rol succesvol aangepast.");
-                    } else {
-                        System.out.println("Er is iets fout gegaan bij het aanpassen van de rol.");
-                    }
-                }
-            }
-        }
-
-        getMessages(null);
-
         while (true) {
-            if (role.equals("scrummaster") || role.equals("product_owner")) {
-                while (true) {
-                    System.out.print("Wil je een nieuwe issue aanmaken? (ja/nee): ");
-                    String issueofNiet = scanner.nextLine();
-                    if (issueofNiet.equals("nee")) {
-                        System.out.println("");
-                        break;
-                    } else if (issueofNiet.equals("ja")) {
-                        System.out.print("Welke issue wil je nu aanmaken?");
-                        String issue = scanner.nextLine();
-                        if (sendIssue(issue)) {
-                            System.out.println("issue bestaat al");
+            String role = getRole(sender);
+            menu1(role);
+            System.out.print("Kies een optie uit het menu (of typ 'exit' om af te sluiten): ");
+            String keuze = scanner.nextLine().toLowerCase();
 
-                        } else if (!issueFormat(issue)) {
-                            System.out.println("fout bij format van issue");
+            if (keuze.equals("exit")) {
+                System.out.println("Tot de volgende keer!");
+                break;
+            }
 
-                        } else {
-                            if (issueNaarDB(issue)) {
-                                System.out.println("issue is opgeslagen");
+            if ("administrator".equalsIgnoreCase(role)) {
+                if (keuze.equals("1")) {
+                    // Rol aanpassen
+                    System.out.print("Gebruikersnaam van de persoon wiens rol je wil aanpassen: ");
+                    String targetUser = scanner.nextLine();
+                    String currentRole = getRole(targetUser);
 
-                            } else {
-                                System.out.println("error");
-                            }
-                        }
+                    if (currentRole == null) {
+                        System.out.println("Gebruiker bestaat niet.");
                     } else {
-                        System.out.println("Ongeldige invoer");
+                        System.out.println(targetUser + " [" + currentRole + "]");
+                        System.out.print("Nieuwe rol (scrummaster, product_owner, developer, administrator): ");
+                        String newRole = scanner.nextLine();
+
+                        if (!isValidRole(newRole)) {
+                            System.out.println("Ongeldige rol.");
+                        } else if (updateRole(targetUser, newRole)) {
+                            System.out.println("Rol succesvol aangepast.");
+                        } else {
+                            System.out.println("Er is een fout opgetreden.");
+                        }
                     }
-                }
-            }
 
-            System.out.print("Wil je berichten ophalen van een bepaalde issue? (ja/nee): ");
-            String issueAntwoord = scanner.nextLine();
-            if (issueAntwoord.equalsIgnoreCase("Ja")){
-                System.out.print("Van welke issue?: ");
-                String nieuwIssueAntwoord = scanner.nextLine();
-                if (issueFormat(nieuwIssueAntwoord)){
-                    getMessages(nieuwIssueAntwoord);
+                } else if (keuze.equals("2")) {
+                    // Gebruiker aanmaken
+                    System.out.print("Nieuwe gebruikersnaam: ");
+                    String newUser = scanner.nextLine();
+                    System.out.print("Wachtwoord: ");
+                    String newPass = scanner.nextLine();
+
+                    if (getRole(newUser) != null) {
+                        System.out.println("Gebruiker bestaat al.");
+                    } else {
+                        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+                             PreparedStatement stmt = conn.prepareStatement("INSERT INTO users (username, password, role) VALUES (?, ?, ?)")) {
+                            stmt.setString(1, newUser);
+                            stmt.setString(2, newPass);
+                            stmt.setString(3, "developer");
+                            stmt.executeUpdate();
+                            System.out.println("Gebruiker aangemaakt.");
+                        } catch (SQLException e) {
+                            System.out.println("Fout bij aanmaken: " + e.getMessage());
+                        }
+                    }
+
+                } else if (keuze.equals("3")) {
+                    // Gebruiker verwijderen
+                    opgehaaldeGebruikers();
+                    System.out.print("Gebruikersnaam om te verwijderen: ");
+
+                    String deleteUser = scanner.nextLine();
+                    if (getRole(deleteUser) == null) {
+                        System.out.println("Gebruiker bestaat niet.");
+                    } else if ("administrator".equalsIgnoreCase(getRole(deleteUser))) {
+                        System.out.println("Je mag geen administrator verwijderen.");
+                    } else {
+                        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+                             PreparedStatement stmt = conn.prepareStatement("DELETE FROM users WHERE username = ?")) {
+                            stmt.setString(1, deleteUser);
+                            stmt.executeUpdate();
+                            System.out.println("Gebruiker verwijderd.");
+                        } catch (SQLException e) {
+                            System.out.println("Fout bij verwijderen: " + e.getMessage());
+                        }
+                    }
                 } else {
-                    System.out.print("Geef een heel getal op: ");
+                    System.out.println("Ongeldige keuze.");
                 }
 
-            } else if(issueAntwoord.equalsIgnoreCase("Nee")) {
-                System.out.print("");
+            } else if (keuze.equals("1") && ("developer".equalsIgnoreCase(role) || "scrummaster".equalsIgnoreCase(role) || "product_owner".equalsIgnoreCase(role))) {
+                // Bericht versturen
+                System.out.print("Voer je bericht in: ");
+                String msg = scanner.nextLine();
+                System.out.print("Voer de issue in: ");
+                String issue = scanner.nextLine();
+
+                while (!sendIssue(issue)) {
+                    System.out.println("Issue bestaat niet, probeer opnieuw:");
+                    issue = scanner.nextLine();
+                }
+
+                if (sendMessage(sender, msg, issue)) {
+                    System.out.println("Bericht verzonden.");
+                } else {
+                    System.out.println("Er ging iets mis.");
+                }
+            }
+            else if (keuze.equals("2")) {
+                System.out.println("Sprint bekijken...");
+                sprintOphalen();  // Dit roept de getSprintDetails methode aan die de sprintinformatie ophaalt en toont
+            }
+
+            else if (keuze.equals("3")) {
+                // Issue bekijken
+                System.out.print("Wil je berichten ophalen van een bepaalde issue? (ja/nee): ");
+                String antwoord = scanner.nextLine();
+                if (antwoord.equalsIgnoreCase("ja")) {
+                    System.out.print("Welke issue?: ");
+                    String issue = scanner.nextLine();
+                    if (issueFormat(issue)) {
+                        getMessages(issue);
+                    } else {
+                        System.out.println("Verkeerd formaat.");
+                    }
+                } else {
+                    getMessages(null);
+                }
+
+            } else if (keuze.equals("4") && ("scrummaster".equalsIgnoreCase(role) || "product_owner".equalsIgnoreCase(role))) {
+                // Nieuwe issue aanmaken
+                System.out.print("Welke issue wil je aanmaken? ");
+                String issue = scanner.nextLine();
+
+                if (sendIssue(issue)) {
+                    System.out.println("Issue bestaat al.");
+                } else if (!issueFormat(issue)) {
+                    System.out.println("Fout in format.");
+                } else if (issueNaarDB(issue)) {
+                    System.out.println("Issue opgeslagen.");
+                } else {
+                    System.out.println("Fout bij opslaan.");
+                }
+
             } else {
-                System.out.print("Onjuiste invoer.");
+                System.out.println("Ongeldige keuze of geen toegang.");
             }
 
-
-
-            System.out.print("Voer je bericht in: ");
-            String message = scanner.nextLine();
-            System.out.print("Voer de issue in: ");
-            String issueid = scanner.nextLine();
-
-            while (!sendIssue(issueid)) {
-                System.out.println("Issue bestaat niet, voer een geldig issue in:");
-                issueid = scanner.nextLine();
-            }
-            System.out.println("Bericht is gekoppeld aan issue.");
-
-            if (sendMessage(sender, message, issueid)) {
-                System.out.println("Bericht succesvol verzonden!");
-            } else {
-                System.out.println("Er is een fout opgetreden.");
-            }
+            System.out.println(); // lege regel voor leesbaarheid
         }
     }
+
+
+
+
 
 
 
@@ -275,6 +320,27 @@ public class main {
     }
 
 
+    public static void opgehaaldeGebruikers() {
+        String query = "SELECT username, role FROM users";
+
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
+
+            System.out.println("Gebruikerslijst:");
+            while (rs.next()) {
+                String naam = rs.getString("username");
+                String rol = rs.getString("role");
+                System.out.println("- " + naam + " [" + rol + "]");
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Fout bij ophalen van gebruikers: " + e.getMessage());
+        }
+    }
+
+
+
     public static void getMessages(String issueFilter) {
         // haalt deze dingen uit de sql
         String query;
@@ -315,6 +381,38 @@ public class main {
         }
     }
 
+    public static void sprintOphalen() {
+        String query = "SELECT sprint_id, naam, startdatum, einddatum, status FROM sprints";
+
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement pstmt = conn.prepareStatement(query);
+             ResultSet rs = pstmt.executeQuery()) {
+
+            while (rs.next()) {
+                int id = rs.getInt("sprint_id");
+                String naam = rs.getString("naam");
+                Date startDatum = rs.getDate("startdatum");
+                Date eindDatum = rs.getDate("einddatum");
+                String status = rs.getString("status");
+
+                System.out.println("Sprint ID: " + id);
+                System.out.println("Sprint Naam: " + naam);
+                System.out.println("Startdatum: " + startDatum);
+                System.out.println("Einddatum: " + eindDatum);
+                System.out.println("Status: " + status);
+                System.out.println("=============================");
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Er is een fout opgetreden bij het ophalen van de sprintinformatie.");
+            e.printStackTrace();
+        }
+    }
+
+
+
+
+
     public static boolean isValidRole(String role) {
         String[] validRoles = {"scrummaster", "product_owner", "developer", "administrator"};
         for (String r : validRoles) {
@@ -338,4 +436,29 @@ public class main {
             return false;
         }
     }
+
+    public static void menu1(String role){
+
+        System.out.println("=== Menu ===");
+        if ("developer".equalsIgnoreCase(role) || "scrummaster".equalsIgnoreCase(role) || "product_owner".equalsIgnoreCase(role)) {
+            System.out.println("1. bericht versturen");
+            System.out.println("2. sprint bekijken");
+            System.out.println("3. issue bekijken");
+        }
+        if ("scrummaster".equalsIgnoreCase(role) || "product_owner".equalsIgnoreCase(role)){
+            System.out.println("4. issue aanmaken");
+        }
+        if ("administrator".equalsIgnoreCase(role)) {
+            System.out.println("1. Gebruikersrollen aanpassen");
+            System.out.println("2. gebruiker aanmaken");
+            System.out.println("3. gebruiker verwijderen");
+        }
+
+
+        System.out.println("============");
+
+
+    }
+
+
 }

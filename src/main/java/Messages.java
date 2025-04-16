@@ -12,18 +12,19 @@ public class Messages {
              ResultSet sprintRs = sprintStmt.executeQuery()) {
 
             while (sprintRs.next()) {
-                int sprintId = sprintRs.getInt("id");
                 String sprintName = sprintRs.getString("name");
                 Timestamp start = sprintRs.getTimestamp("start_date");
                 Timestamp end = sprintRs.getTimestamp("end_date");
 
-                System.out.println("=== " + sprintName + " ===");
+                SimpleDateFormat sprintDateFormat = new SimpleDateFormat("dd-MM-yyyy");
+                String formattedStart = sprintDateFormat.format(start);
+                String formattedEnd = sprintDateFormat.format(end);
+                System.out.println("=== [" + formattedStart + "] " + sprintName + " [" + formattedEnd + "] ===");
 
-                // Haal berichten op binnen deze sprint
                 String messageQuery = """
-                    SELECT sender, message, timestamp 
-                    FROM messages 
-                    WHERE timestamp BETWEEN ? AND ? 
+                    SELECT sender, message, timestamp
+                    FROM messages
+                    WHERE timestamp BETWEEN ? AND ?
                     ORDER BY timestamp ASC
                     """;
 
@@ -38,7 +39,6 @@ public class Messages {
                         String msg = msgRs.getString("message");
                         Timestamp timeStamp = msgRs.getTimestamp("timestamp");
 
-                        // Format timestamp to a readable date-time
                         SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
                         String formattedTime = sdf.format(timeStamp);
 

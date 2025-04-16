@@ -4,9 +4,8 @@ import java.util.Scanner;
 public class AdministratorMenu {
     private static final Scanner scanner = new Scanner(System.in);
 
-    public static void start(Scanner scanner, String adminUsername) {
+    public static void start(Scanner scanner) {
         while (true) {
-            System.out.println("\nWelkom " + adminUsername + " (Administrator)");
             System.out.println("[1] Bekijk alle gebruikers");
             System.out.println("[2] Wijzig gebruikersrol");
             System.out.println("[3] Verwijder gebruiker");

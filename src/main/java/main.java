@@ -9,13 +9,15 @@ public class Main {
         String sender = authentication.authenticate();
         String role = Users.getRole(sender);
 
+        System.out.println("\nWelkom " + sender + " [" + role + "]\n");
+
         if (!role.equals("administrator")) {
             Messages.displayMessagesBySprint();
         }
 
         switch (role) {
             case "administrator":
-                AdministratorMenu.start(scanner, sender);
+                AdministratorMenu.start(scanner);
                 break;
             case "developer":
             case "product_owner":

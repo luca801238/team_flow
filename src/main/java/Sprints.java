@@ -10,8 +10,8 @@ public class Sprints {
         System.out.print("Voer de naam van de sprint in: ");
         String name = scanner.nextLine();
 
-        LocalDateTime startDateTime = readDate(scanner, "startdatum (dd-MM-yyyy): ", true);
-        LocalDateTime endDateTime = readDate(scanner, "einddatum (dd-MM-yyyy): ", false);
+        LocalDateTime startDateTime = readDate(scanner, "startdatum (dd-MM-yyyy)", true);
+        LocalDateTime endDateTime = readDate(scanner, "einddatum (dd-MM-yyyy)", false);
 
         if (endDateTime.isBefore(startDateTime)) {
             System.out.println("Einddatum mag niet voor de startdatum liggen.");
@@ -43,7 +43,7 @@ public class Sprints {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
         while (true) {
             try {
-                System.out.print("Voer de " + prompt);
+                System.out.print("Voer de " + prompt + " van de sprint in: ");
                 String input = scanner.nextLine().trim();
                 LocalDate date = LocalDate.parse(input, formatter);
                 return isStart

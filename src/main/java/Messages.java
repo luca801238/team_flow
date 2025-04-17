@@ -64,20 +64,25 @@ public class Messages {
             String keuze = scanner.nextLine();
 
             if (keuze.equalsIgnoreCase("issue")) {
-                System.out.println("Van welk type issue? (epic/user_story/task): ");
-                String issueType = scanner.nextLine().toLowerCase();
+                String issueId;
+                String issueType;
 
-                while (!(issueType.equals("epic") || issueType.equals("user_story") || issueType.equals("task"))) {
-                    System.out.println("Ongeldige type. Kies 'epic', 'user_story' of 'task'.");
-                    issueType = scanner.nextLine().toLowerCase();
-                }
+                while (true) {
+                    System.out.print("Voer de ID van het issue in (bijv. 1, 1.1 of 1.1.1): ");
+                    issueId = scanner.nextLine();
+                    issueType = determineIssueType(issueId);
 
-                System.out.println("Voer de ID van het issue in: ");
-                String issueId = scanner.nextLine();
+                    if (issueType == null) {
+                        System.out.println("Ongeldig formaat. Gebruik bijvoorbeeld 1, 1.1 of 1.1.1.");
+                        continue;
+                    }
 
-                if (!issueExists(issueType, issueId)) {
-                    System.out.println("Dit issue bestaat niet.");
-                    continue;
+                    if (!issueExists(issueType, issueId)) {
+                        System.out.println("Dit issue bestaat niet.");
+                        continue;
+                    }
+
+                    break;
                 }
 
                 String query = "SELECT sender, message, timestamp FROM messages WHERE issue_id = ? AND issue_type = ? ORDER BY timestamp ASC";
@@ -109,9 +114,32 @@ public class Messages {
                 }
 
                 break;
+
             } else if (keuze.equalsIgnoreCase("sprint")) {
-                System.out.println("Van welke sprint?");
-                String sprintName = scanner.nextLine();
+                String sprintName;
+                while (true) {
+                    System.out.print("Voer de naam van de sprint in: ");
+                    sprintName = scanner.nextLine();
+
+                    String checkSprintQuery = "SELECT 1 FROM sprints WHERE name = ?";
+                    try (Connection conn = Database.getConnection();
+                         PreparedStatement checkStmt = conn.prepareStatement(checkSprintQuery)) {
+
+                        checkStmt.setString(1, sprintName);
+                        ResultSet checkRs = checkStmt.executeQuery();
+
+                        if (!checkRs.next()) {
+                            System.out.println("Deze sprint bestaat niet.");
+                            continue;
+                        }
+
+                        break;
+
+                    } catch (SQLException e) {
+                        System.out.println("Fout bij controleren van de sprint: " + e.getMessage());
+                        return;
+                    }
+                }
 
                 String query = "SELECT m.sender, m.message, m.timestamp, m.issue_id FROM messages m " +
                         "JOIN sprints s ON m.timestamp BETWEEN s.start_date AND s.end_date " +
@@ -151,6 +179,17 @@ public class Messages {
         }
     }
 
+    private static String determineIssueType(String issueId) {
+        if (issueId.matches("^\\d+$")) {
+            return "epic";
+        } else if (issueId.matches("^\\d+\\.\\d+$")) {
+            return "user_story";
+        } else if (issueId.matches("^\\d+\\.\\d+\\.\\d+$")) {
+            return "task";
+        }
+        return null;
+    }
+
     private static boolean issueExists(String issueType, String issueId) {
         String query = "";
         switch (issueType) {
@@ -180,38 +219,46 @@ public class Messages {
         }
     }
 
-    public static void sendMessage(Scanner scanner, String sender) {
-        System.out.print("Voer je bericht in: ");
-        String message = scanner.nextLine();
+    public static void sendMessage(Scanner scanner, String username) {
+        String issueId;
+        String issueType;
 
-        System.out.print("Voor welk type issue wil je dit bericht sturen? (epic/user_story/task): ");
-        String issueType = scanner.nextLine().toLowerCase();
-
-        while (!(issueType.equals("epic") || issueType.equals("user_story") || issueType.equals("task"))) {
-            System.out.print("Ongeldige type, kies 'epic', 'user_story', of 'task': ");
-            issueType = scanner.nextLine().toLowerCase();
-        }
-
-        System.out.print("Voer de ID van het issue in: ");
-        String issueId = scanner.nextLine();
-
-        while (!issueExists(issueType, issueId)) {
-            System.out.print("Issue bestaat niet, voer een geldig issue in:");
+        while (true) {
+            System.out.print("Voor welk issue wil je een bericht sturen? Voer de ID in (bijv. 1, 1.1 of 1.1.1): ");
             issueId = scanner.nextLine();
+
+            issueType = determineIssueType(issueId);
+            if (issueType == null) {
+                System.out.println("Ongeldig formaat. Gebruik bijvoorbeeld 1, 1.1 of 1.1.1");
+                continue;
+            }
+
+            if (!issueExists(issueType, issueId)) {
+                System.out.println("Dit issue bestaat niet.");
+                continue;
+            }
+
+            break;
         }
 
-        String query = "INSERT INTO messages (sender, message, issue_id, issue_type) VALUES (?, ?, ?, ?)";
+        System.out.print("Typ je bericht: ");
+        String messageContent = scanner.nextLine();
+
+        String insertQuery = """
+        INSERT INTO messages (sender, message, timestamp, issue_id, issue_type)
+        VALUES (?, ?, NOW(), ?, ?)
+        """;
 
         try (Connection conn = Database.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(query)) {
+             PreparedStatement pstmt = conn.prepareStatement(insertQuery)) {
 
-            pstmt.setString(1, sender);
-            pstmt.setString(2, message);
-            pstmt.setString(3, issueId);   // issue_id (issue ID)
-            pstmt.setString(4, issueType);  // issue_type (epic, user_story, task)
+            pstmt.setString(1, username);
+            pstmt.setString(2, messageContent);
+            pstmt.setString(3, issueId);
+            pstmt.setString(4, issueType);
+
             pstmt.executeUpdate();
-
-            System.out.println("Bericht succesvol verzonden!");
+            System.out.println("Bericht succesvol verzonden.");
 
         } catch (SQLException e) {
             System.out.println("Fout bij het opslaan van het bericht: " + e.getMessage());

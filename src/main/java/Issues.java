@@ -4,7 +4,7 @@ import java.util.Scanner;
 public class Issues {
 
     public static void createIssue(Scanner scanner) {
-        System.out.print("Welk type issue wil je aanmaken? (epic/story/task): ");
+        System.out.println("Welk type issue wil je aanmaken? (epic/story/task)");
         String type = scanner.nextLine().trim().toLowerCase();
 
         Issue issue = switch (type) {

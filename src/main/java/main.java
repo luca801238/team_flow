@@ -17,7 +17,7 @@ public class Main {
 
         switch (role) {
             case "administrator":
-                AdministratorMenu.start(scanner);
+                AdministratorMenu.start(scanner, sender);
                 break;
             case "developer":
             case "product_owner":

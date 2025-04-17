@@ -4,7 +4,7 @@ import java.util.Scanner;
 public class AdministratorMenu {
     private static final Scanner scanner = new Scanner(System.in);
 
-    public static void start(Scanner scanner) {
+    public static void start(Scanner scanner, String sender) {
         while (true) {
             System.out.println("[1] Bekijk alle gebruikers");
             System.out.println("[2] Wijzig gebruikersrol");
@@ -18,7 +18,7 @@ public class AdministratorMenu {
                     showAllUsers();
                     break;
                 case "2":
-                    changeUserRole();
+                    changeUserRole(sender);
                     break;
                 case "3":
                     deleteUser();
@@ -48,9 +48,14 @@ public class AdministratorMenu {
         }
     }
 
-    private static void changeUserRole() {
+    private static void changeUserRole(String sender) {
         System.out.print("Gebruikersnaam waarvan je de rol wil aanpassen: ");
         String targetUser = scanner.nextLine();
+
+        if (targetUser.equals(sender)) {
+            System.out.println("Je mag je eigen rol niet aanpassen.");
+            return;
+        }
 
         String currentRole = Users.getRole(targetUser);
         if (currentRole == null) {
@@ -80,8 +85,6 @@ public class AdministratorMenu {
 
         if (Users.deleteUser(targetUser)) {
             System.out.println("Gebruiker succesvol verwijderd.");
-        } else {
-            System.out.println("Kon gebruiker niet verwijderen (bestaat niet?).");
         }
     }
 }

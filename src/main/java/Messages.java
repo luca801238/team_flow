@@ -113,7 +113,7 @@ public class Messages {
                 System.out.println("Van welke sprint?");
                 String sprintName = scanner.nextLine();
 
-                String query = "SELECT m.sender, m.message, m.timestamp FROM messages m " +
+                String query = "SELECT m.sender, m.message, m.timestamp, m.issue_id FROM messages m " +
                         "JOIN sprints s ON m.timestamp BETWEEN s.start_date AND s.end_date " +
                         "WHERE s.name = ? ORDER BY m.timestamp ASC";
 
@@ -130,7 +130,8 @@ public class Messages {
                         String sender = rs.getString("sender");
                         String content = rs.getString("message");
                         String timestamp = rs.getString("timestamp");
-                        System.out.println("[" + timestamp + "] " + sender + ": " + content);
+                        String issueId = rs.getString("issue_id");
+                        System.out.println("[" + timestamp + "] (" + issueId + ") " + sender + ": " + content);
                         found = true;
                     }
 
@@ -148,10 +149,6 @@ public class Messages {
                 System.out.println("Ongeldige keuze. Kies 'issue' of 'sprint'.");
             }
         }
-    }
-
-    private static boolean issueFormat(String issue) {
-        return issue.matches("^\\d+(\\.\\d+){0,2}$");
     }
 
     private static boolean issueExists(String issueType, String issueId) {

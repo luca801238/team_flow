@@ -4,7 +4,7 @@ import java.sql.SQLException;
 public class Users {
 
     public static String getRole(String username) {
-        String query = "SELECT role FROM users WHERE username = ?";
+        String query = "SELECT role FROM users WHERE username =  ?";
 
         try (Connection conn = Database.getConnection();
              PreparedStatement statement = conn.prepareStatement(query)) {
@@ -63,20 +63,5 @@ public class Users {
             System.out.println("Fout bij verwijderen gebruiker: " + e.getMessage());
             return false;
         }
-    }
-
-    public static boolean hasScrumBoard(String username) {
-        String query = "SELECT scrumboard_id FROM users WHERE username = ?";
-        try (Connection conn = Database.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(query)) {
-            pstmt.setString(1, username);
-            ResultSet rs = pstmt.executeQuery();
-            if (rs.next()) {
-                return rs.getObject("scrumboard_id") != null;
-            }
-        } catch (SQLException e) {
-            System.out.println("Fout bij controleren van scrum board: " + e.getMessage());
-        }
-        return false;
     }
 }

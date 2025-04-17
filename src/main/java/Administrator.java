@@ -1,10 +1,14 @@
 import java.sql.*;
 import java.util.Scanner;
 
-public class AdministratorMenu {
-    private static final Scanner scanner = new Scanner(System.in);
+public class Administrator extends User {
 
-    public static void start(Scanner scanner, String sender) {
+    public Administrator(String username) {
+        super(username);
+    }
+
+    @Override
+    public void showMenu(Scanner scanner) {
         while (true) {
             System.out.println("[1] Bekijk alle gebruikers");
             System.out.println("[2] Wijzig gebruikersrol");
@@ -14,24 +18,16 @@ public class AdministratorMenu {
             String choice = scanner.nextLine();
 
             switch (choice) {
-                case "1":
-                    showAllUsers();
-                    break;
-                case "2":
-                    changeUserRole(sender);
-                    break;
-                case "3":
-                    deleteUser();
-                    break;
-                case "0":
-                    return;
-                default:
-                    System.out.println("Ongeldige keuze.");
+                case "1" -> showAllUsers();
+                case "2" -> changeUserRole(scanner);
+                case "3" -> deleteUser(scanner);
+                case "0" -> { return; }
+                default -> System.out.println("Ongeldige keuze.");
             }
         }
     }
 
-    private static void showAllUsers() {
+    private void showAllUsers() {
         try (Connection conn = Database.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery("SELECT username, role FROM users")) {
@@ -42,17 +38,16 @@ public class AdministratorMenu {
                 String role = rs.getString("role");
                 System.out.println("- " + name + " [" + role + "]");
             }
-
         } catch (SQLException e) {
             System.out.println("Fout bij ophalen gebruikers: " + e.getMessage());
         }
     }
 
-    private static void changeUserRole(String sender) {
+    private void changeUserRole(Scanner scanner) {
         System.out.print("Gebruikersnaam waarvan je de rol wil aanpassen: ");
         String targetUser = scanner.nextLine();
 
-        if (targetUser.equals(sender)) {
+        if (targetUser.equals(username)) {
             System.out.println("Je mag je eigen rol niet aanpassen.");
             return;
         }
@@ -79,7 +74,7 @@ public class AdministratorMenu {
         }
     }
 
-    private static void deleteUser() {
+    private void deleteUser(Scanner scanner) {
         System.out.print("Gebruikersnaam van de gebruiker die je wil verwijderen: ");
         String targetUser = scanner.nextLine();
 

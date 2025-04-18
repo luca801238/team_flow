@@ -1,5 +1,7 @@
 import java.sql.*;
 import java.util.Scanner;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Administrator extends User {
 
@@ -27,44 +29,68 @@ public class Administrator extends User {
         }
     }
 
-    private void showAllUsers() {
-        try (Connection conn = Database.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT username, role FROM users")) {
+    public static void showAllUsers() {
+        String[] roleOrder = {"administrator", "scrum_master", "product_owner", "developer"};
 
-            System.out.println("\nGebruikers:");
-            while (rs.next()) {
-                String name = rs.getString("username");
-                String role = rs.getString("role");
-                System.out.println("- " + name + " [" + role + "]");
+        for (String role : roleOrder) {
+            List<String> users = new ArrayList<>();
+
+            String query = "SELECT username FROM users WHERE role = ? ORDER BY username";
+
+            try (Connection conn = Database.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(query)) {
+
+                stmt.setString(1, role);
+                ResultSet rs = stmt.executeQuery();
+
+                while (rs.next()) {
+                    users.add(rs.getString("username"));
+                }
+
+                if (!users.isEmpty()) {
+                    System.out.println("=== " + role.toUpperCase().replace("_", " ") + "S ===");
+                    for (String user : users) {
+                        System.out.println("- " + user);
+                    }
+                }
+
+            } catch (SQLException e) {
+                System.out.println("Fout bij ophalen van gebruikers voor rol " + role + ": " + e.getMessage());
             }
-        } catch (SQLException e) {
-            System.out.println("Fout bij ophalen gebruikers: " + e.getMessage());
         }
     }
 
     private void changeUserRole(Scanner scanner) {
-        System.out.print("Gebruikersnaam waarvan je de rol wil aanpassen: ");
-        String targetUser = scanner.nextLine();
+        String targetUser;
 
-        if (targetUser.equals(username)) {
-            System.out.println("Je mag je eigen rol niet aanpassen.");
-            return;
+        while (true) {
+            System.out.print("Gebruikersnaam waarvan je de rol wil aanpassen: ");
+            targetUser = scanner.nextLine();
+
+            if (targetUser.equals(username)) {
+                System.out.println("Je mag je eigen rol niet aanpassen.");
+                return;
+            }
+
+            String currentRole = Users.getRole(targetUser);
+            if (currentRole == null) {
+                System.out.println("Gebruiker bestaat niet.");
+            } else {
+                System.out.println(targetUser + " [" + currentRole + "]");
+                break;
+            }
         }
 
-        String currentRole = Users.getRole(targetUser);
-        if (currentRole == null) {
-            System.out.println("Gebruiker bestaat niet.");
-            return;
-        }
+        String newRole;
+        while (true) {
+            System.out.print("Nieuwe rol (developer, scrum_master, product_owner, administrator): ");
+            newRole = scanner.nextLine();
 
-        System.out.println(targetUser + " [" + currentRole + "]");
-        System.out.print("Nieuwe rol (developer, scrum_master, product_owner, administrator): ");
-        String newRole = scanner.nextLine();
-
-        if (!Users.isValidRole(newRole)) {
-            System.out.println("Ongeldige rol.");
-            return;
+            if (!Users.isValidRole(newRole)) {
+                System.out.println("Ongeldige rol.");
+            } else {
+                break;
+            }
         }
 
         if (Users.updateRole(targetUser, newRole)) {
@@ -75,11 +101,49 @@ public class Administrator extends User {
     }
 
     private void deleteUser(Scanner scanner) {
-        System.out.print("Gebruikersnaam van de gebruiker die je wil verwijderen: ");
-        String targetUser = scanner.nextLine();
+        String targetUser;
+        String role;
 
-        if (Users.deleteUser(targetUser)) {
-            System.out.println("Gebruiker succesvol verwijderd.");
+        while (true) {
+            System.out.print("Gebruikersnaam van de gebruiker die je wil verwijderen: ");
+            targetUser = scanner.nextLine();
+
+            if (targetUser.equals(username)) {
+                System.out.println("Je kunt jezelf niet verwijderen.");
+                continue;
+            }
+
+            role = Users.getRole(targetUser);
+            if (role == null) {
+                System.out.println("Gebruiker bestaat niet.");
+                continue;
+            }
+
+            if (role.equalsIgnoreCase("administrator")) {
+                System.out.println("Je kunt geen administrator verwijderen.");
+                continue;
+            }
+
+            break;
+        }
+
+        while (true) {
+            System.out.print("Weet je zeker dat je " + targetUser + " [" + role + "] wilt verwijderen? (ja/nee): ");
+            String bevestiging = scanner.nextLine().toLowerCase();
+
+            if (bevestiging.equals("ja")) {
+                if (Users.deleteUser(targetUser)) {
+                    System.out.println("Gebruiker succesvol verwijderd.");
+                } else {
+                    System.out.println("Kon gebruiker niet verwijderen.");
+                }
+                break;
+            } else if (bevestiging.equals("nee")) {
+                System.out.println("Verwijderen van gebruiker geannuleerd.");
+                break;
+            } else {
+                System.out.println("Ongeldige invoer. Antwoord met 'ja' of 'nee'.");
+            }
         }
     }
 }

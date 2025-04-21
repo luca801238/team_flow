@@ -4,71 +4,61 @@ import java.util.Scanner;
 public class Issues {
 
     public static void createIssue(Scanner scanner) {
-        System.out.print("Welke issue wil je nu aanmaken? ");
-        String issue = scanner.nextLine();
+        System.out.println("Welk type issue wil je aanmaken? (epic/story/task)");
+        String type = scanner.nextLine().trim().toLowerCase();
 
-        if (!issueFormat(issue)) {
-            System.out.println("Fout bij format van issue. Gebruik bijvoorbeeld 1 of 1.1 of 1.1.1");
-            return;
-        }
+        Issue issue = switch (type) {
+            case "epic" -> new Epic();
+            case "story" -> new UserStory();
+            case "task" -> new Task();
+            default -> null;
+        };
 
-        if (issueExists(issue)) {
-            System.out.println("Issue bestaat al.");
-            return;
-        }
-
-        if (saveIssueToDatabase(issue)) {
-            System.out.println("Issue is opgeslagen.");
+        if (issue != null) {
+            issue.create(scanner);
         } else {
-            System.out.println("Er is iets fout gegaan bij het opslaan van de issue.");
-        }
-    }
-
-    private static boolean issueFormat(String issue) {
-        return issue.matches("^\\d+(\\.\\d+){0,2}$");
-    }
-
-    private static boolean issueExists(String issueId) {
-        String query = "SELECT 1 FROM issues WHERE id = ?";
-        try (Connection conn = Database.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(query)) {
-
-            pstmt.setString(1, issueId);
-            ResultSet rs = pstmt.executeQuery();
-            return rs.next();
-
-        } catch (SQLException e) {
-            System.out.println("Fout bij controleren of issue bestaat: " + e.getMessage());
-            return false;
-        }
-    }
-
-    private static boolean saveIssueToDatabase(String issueId) {
-        String query = "INSERT INTO issues (id) VALUES (?)";
-        try (Connection conn = Database.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(query)) {
-
-            pstmt.setString(1, issueId);
-            pstmt.executeUpdate();
-            return true;
-
-        } catch (SQLException e) {
-            System.out.println("Fout bij opslaan van issue: " + e.getMessage());
-            return false;
+            System.out.println("Ongeldig type issue.");
         }
     }
 
     public static void listAllIssues() {
-        String query = "SELECT id FROM issues ORDER BY id ASC";
+        String epicQuery = "SELECT id, name FROM epics ORDER BY id ASC";
+        String storyQuery = "SELECT id, name, epic_id FROM user_stories WHERE epic_id = ? ORDER BY id ASC";
+        String taskQuery = "SELECT id, name, story_id FROM tasks WHERE story_id = ? ORDER BY id ASC";
 
-        try (Connection conn = Database.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query);
-             ResultSet rs = stmt.executeQuery()) {
+        try (Connection conn = Database.getConnection()) {
+            System.out.println("=== Alle issues ===");
 
-            System.out.println("\n=== Alle issues ===");
-            while (rs.next()) {
-                String id = rs.getString("id");
-                System.out.println(id);
+            try (PreparedStatement epicStmt = conn.prepareStatement(epicQuery);
+                 ResultSet epicRs = epicStmt.executeQuery()) {
+
+                while (epicRs.next()) {
+                    String epicId = epicRs.getString("id");
+                    String epicName = epicRs.getString("name");
+                    System.out.println(epicId + ": " + epicName);
+
+                    try (PreparedStatement storyStmt = conn.prepareStatement(storyQuery)) {
+                        storyStmt.setString(1, epicId);
+                        try (ResultSet storyRs = storyStmt.executeQuery()) {
+                            while (storyRs.next()) {
+                                String storyId = storyRs.getString("id");
+                                String storyName = storyRs.getString("name");
+                                System.out.println("    " + storyId + ": " + storyName);
+
+                                try (PreparedStatement taskStmt = conn.prepareStatement(taskQuery)) {
+                                    taskStmt.setString(1, storyId);
+                                    try (ResultSet taskRs = taskStmt.executeQuery()) {
+                                        while (taskRs.next()) {
+                                            String taskId = taskRs.getString("id");
+                                            String taskName = taskRs.getString("name");
+                                            System.out.println("        " + taskId + ": " + taskName);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
         } catch (SQLException e) {

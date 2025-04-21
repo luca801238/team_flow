@@ -6,26 +6,28 @@ public class Main {
         Scanner scanner = new Scanner(System.in);
 
         Authentication authentication = new Authentication();
-        String sender = authentication.authenticate();
-        String role = Users.getRole(sender);
+        String username = authentication.authenticate();
+        String role = Users.getRole(username);
 
-        System.out.println("\nWelkom " + sender + " [" + role + "]\n");
+        System.out.println("\nWelkom " + username + " [" + role + "]\n");
 
         if (!role.equals("administrator")) {
             Messages.displayMessagesBySprint();
         }
 
+        User user;
+
         switch (role) {
-            case "administrator":
-                AdministratorMenu.start(scanner, sender);
-                break;
-            case "developer":
-            case "product_owner":
-            case "scrum_master":
-                UserMenu.start(scanner, sender, role);
-                break;
-            default:
-                System.out.println("Je hebt geen rol.");
+            case "developer" -> user = new Developer(username);
+            case "scrum_master" -> user = new ScrumMaster(username);
+            case "product_owner" -> user = new ProductOwner(username);
+            case "administrator" -> user = new Administrator(username);
+            default -> {
+                System.out.println("Onbekende rol: " + role);
+                return;
+            }
         }
+
+        user.showMenu(scanner);
     }
 }
